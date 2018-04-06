@@ -1,0 +1,25 @@
+<div id="view-symbols">
+    <h1 class="h1">Symbols</h1>
+    <div class="table-responsive">
+        <table class="table">
+
+            <thead>
+            <tr>
+                <th ng-repeat="(s,items) in symbols">{{s}}</th>
+            </tr>
+            </thead>
+            <tbody>
+
+            <tr>
+                <td ng-repeat="(s,items) in symbols">
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-repeat="i in items">{{i}}</li>
+                    </ul>
+                </td>
+            </tr>
+
+            </tbody>
+
+        </table>
+    </div>
+</div>

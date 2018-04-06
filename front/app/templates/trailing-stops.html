@@ -1,0 +1,15 @@
+<div id="view-trailing-stops">
+
+    <h1 class="h1">Trailing Stops</h1>
+
+
+    <div ng-hide="trailingStops" class="alert waring" role="alert">
+        Loading…
+    </div>
+    <div ng-show="trailingStops">
+        <trailing-stops-directive trailing-stops="trailingStops.active"></trailing-stops-directive>
+
+        <h1 class="h1">Old Trailing Stops</h1>
+        <trailing-stops-directive trailing-stops="trailingStops.history"></trailing-stops-directive>
+    </div>
+</div>

@@ -1,0 +1,54 @@
+<p ng-show="trailingStops.length===0">No active trailing stops yet !</p>
+<div class="table-responsive" ng-show="trailingStops.length>0">
+
+    <table class="table table-striped text-center">
+        <thead class="thead-light">
+        <tr>
+            <th scope="col" colspan="4" style="background: none; border-top:0 none; border-left:0 none">&nbsp;</th>
+            <th scope="col">Stop</th>
+            <th scope="col" colspan="2">Gains</th>
+        </tr>
+        <tr>
+            <th scope="col" width="7%">Symbol</th>
+            <th scope="col" width="5%">Quantity</th>
+            <th scope="col" width="10%">Price</th>
+            <th scope="col">Distance</th>
+            <th scope="col" width="12%">Last</th>
+            <th scope="col" width="12%">Pips</th>
+            <th scope="col" width="5%">%</th>
+            <th scope="col" width="15%">Status</th>
+            <th scope="col" width="2%">Action</th>
+        </tr>
+        </thead>
+        <tbody>
+
+        <tr ng-repeat="trailingStop in trailingStops">
+            <td>{{trailingStop.Symbol.name}}</td>
+            <td>{{trailingStop.quantity}}</td>
+            <td>{{trailingStop.price|number:trailingStop.Symbol.pips.digits}}</td>
+            <td>
+                <div class="progress" ng-show="trailingStop.distance">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{trailingStop.distance.ratio*100|number:2}}%" aria-valuenow="30"
+                         aria-valuemin="0" aria-valuemax="100">{{trailingStop.distance.pips}}
+                    </div>
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{100-trailingStop.distance.ratio*100|number:2}}%" aria-valuenow="20"
+                         aria-valuemin="0" aria-valuemax="100">{{trailingStop.margin.pips-trailingStop.distance.pips}}
+                    </div>
+                </div>
+            </td>
+            <td>{{trailingStop.stop.last|number:trailingStop.Symbol.pips.digits}}</td>
+            <td>+{{trailingStop.gain.pips}}</td>
+            <td>+{{trailingStop.gain.ratio*100|number:2}}%</td>
+            <td>
+                <span ng-show="shouldShowStatusMessage(trailingStop)" class="text-info">{{trailingStop.statusMessage}}</span>
+                <time ng-hide="shouldShowStatusMessage(trailingStop)" am-time-ago="{{trailingStop.start.time}}"></time>
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm" ng-click="stop(trailingStop)">X</button>
+            </td>
+        </tr>
+
+        </tbody>
+    </table>
+
+</div>

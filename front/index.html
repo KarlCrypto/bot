@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en" ng-app="KarlCryptoBot">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+          crossorigin="anonymous">
+    <!-- Custom styles for this template -->
+    <link href="/css/dashboard.css" rel="stylesheet">
+
+    <title>Karl Crypto - Bot</title>
+</head>
+<body ng-controller="mainController">
+<nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0">
+    <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">Karl Crypto - Bot</a>
+    <!--<input class="form-control form-control-dark w-100" type="text" placeholder="Symbol" aria-label="Symbol">-->
+</nav>
+
+<div class="container-fluid" ng-cloak>
+    <div class="row">
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#!dashboard" ng-class="{active:location.url()==='/dashboard'}">
+                            <span data-feather="home"></span>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#!trailing-stops" ng-class="{active:location.url()==='/trailing-stops'}">
+                            <span data-feather="file"></span>
+                            Trailing Stops
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#!new-trailing-stops" ng-class="{active:location.url()==='/new-trailing-stops'}">
+                            <span data-feather="plus"></span>
+                            New Trailing Stops
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#!symbols" ng-class="{active:location.url()==='/symbols'}">
+                            <span data-feather="grid"></span>
+                            Symbols
+                        </a>
+                    </li>
+                </ul>
+
+            </div>
+        </nav>
+
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 pt-3 px-4" ng-view>
+        </main>
+    </div>
+</div>
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<script src="/js/angular.min.js" crossorigin="anonymous"></script>
+<script src="/js/angular-route.js"></script>
+
+<script src="/app/app.js" crossorigin="anonymous"></script>
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="/js/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+<script src="/js/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+<!-- Icons -->
+<script src="https://unpkg.com/feather-icons/dist/feather.min.js"></script>
+
+<!-- load momentJS (required for angular-moment) -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
+
+<!-- load angular-moment -->
+<script src="//cdnjs.cloudflare.com/ajax/libs/angular-moment/0.9.0/angular-moment.min.js"></script>
+
+<script>
+	feather.replace()
+</script>
+
+</body>
+</html>

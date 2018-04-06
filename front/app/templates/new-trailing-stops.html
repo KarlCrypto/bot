@@ -1,0 +1,133 @@
+<div id="view-new-trailing-stops" class="container">
+    <button type="submit" class="btn btn-primary btn-lg float-right" ng-show="configuration.symbol" ng-click="submit()">Add</button>
+    <h1 class="h1">New Trailing Stop</h1>
+    <hr>
+    <form>
+        <div class="form-row">
+            <div class="form-group col-md-6 text-center" ng-show="configuration.symbol">
+                <label for="search">Selected symbol</label>
+                <h4 class="h4">{{configuration.symbol}}
+                    <button ng-click="resetSymbol()" class="btn btn-danger btn-sm">X</button>
+                </h4>
+            </div>
+            <div class="form-group col-md-6 text-center" ng-show="configuration.symbol">
+                <label for="price">Current Price</label><br/>
+                <div>
+                    <button class="btn btn-outline-info" ng-click="prefillWith(lastPrice)">{{lastPrice}}</button>
+                </div>
+            </div>
+            <div class="form-group col-md-6" ng-hide="configuration.symbol">
+                <label for="search">Pick a symbol</label>
+
+                <div class="input-group">
+                    <div class="input-group-prepend">
+                        <div class="input-group-text">&#x1F50D;</div>
+                    </div>
+                    <input type="text" class="form-control" id="search" placeholder="TRXETH" ng-model="symbolFilter">
+                </div>
+                <div class="list-group">
+                    <a class="list-group-item list-group-item-action" ng-class="{active:configuration.symbol==s.name}"
+                       ng-repeat="s in allSymbols|filter:symbolFilter" ng-click="selectSymbol(s)">
+                        {{s.name}}
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div ng-show="configuration.symbol">
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="start">Start the trailing stop if price rise above… (Optional)</label>
+                    <input type="text" class="form-control" id="start" ng-model="configuration.start">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="stop">First Stop</label>
+                    <input type="text" class="form-control" id="stop" ng-model="configuration.stop" ng-change="refreshFromStop()">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="stop">Quantity to sell (Market order)</label>
+                    <input type="text" class="form-control" id="quantity" ng-model="configuration.quantity">
+                </div>
+            </div>
+
+        </div>
+        <div ng-show="configuration.stop">
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="price">Margin Ratio</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="margin.ratio" ng-model="configuration.margin.ratio" ng-change="refreshFromMarginRatio()">
+                        <div class="input-group-prepend">
+                            <div class="input-group-text">%</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="start">Margin Price</label>
+                    <input type="text" class="form-control" id="margin.price" ng-model="configuration.margin.price" ng-change="refreshFromMarginPrice()">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="stop">Margin Pips</label>
+                    <input type="text" class="form-control" id="margin.pips" ng-model="configuration.margin.pips" ng-change="refreshFromMarginPips()">
+                </div>
+            </div>
+
+
+            <div class="form-row">
+                <h3 class="h3">Statistics about {{configuration.symbol}}</h3>
+                <div class="form-group col-md-12">
+                    <p>Pips variation based on average or maximum for each period.<br/>
+                        <strong>Body</strong> only measure open to close for each candlestick.
+                        <strong>Full</strong> measure high to low for each for each candlestick.</p>
+                </div>
+                <div class="form-group col-md-12">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th scope="col" width="12%" ng-repeat="(period,average) in statistics">{{period}}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td rowspan="2">Average</td>
+                            <td>Body</td>
+                            <td scope="col" ng-repeat="(period,average) in statistics">
+                                <button class="btn btn-sm btn-outline-primary" ng-click="refreshFromMarginPips(average.pips.average.body)">
+                                    {{average.pips.average.body}}
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Full</td>
+                            <td scope="col" ng-repeat="(period,average) in statistics">
+                                <button class="btn btn-sm btn-outline-primary" ng-click="refreshFromMarginPips(average.pips.average.full)">
+                                    {{average.pips.average.full}}
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td rowspan="2">Max</td>
+                            <td>Body</td>
+                            <td scope="col" ng-repeat="(period,average) in statistics">
+                                <button class="btn btn-sm btn-outline-primary" ng-click="refreshFromMarginPips(average.pips.max.body)">
+                                    {{average.pips.max.body}}
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Full</td>
+                            <td scope="col" ng-repeat="(period,average) in statistics">
+                                <button class="btn btn-sm btn-outline-primary" ng-click="refreshFromMarginPips(average.pips.max.full)">
+                                    {{average.pips.max.full}}
+                                </button>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </form>
+
+</div>

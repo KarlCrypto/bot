@@ -20,6 +20,7 @@ const client = Binance({
 let trailingStops = new TrailingStopsModel()
 let symbols = new SymbolsModel()
 let infos = {}
+let canTrade = false
 
 app.get('/api/infos', (req, res) => {
 	res.send(infos)
@@ -225,7 +226,7 @@ app.post('/api/trailingstops', (req, res) => {
 					currentTrailingStop.sell()
 					console.log('=== SELL @', trade.price, '(stop increased by +', Symbol.pipsFromPrice(currentTrailingStop.stop.delta), 'pips !)')
 					trailingStops.remove(currentTrailingStop.id)
-					if (currentTrailingStop.quantity > 0) {
+					if (canTrade && currentTrailingStop.quantity > 0) {
 						// Sell at market price for quantity
 						client.order({
 							symbol: Symbol.name,
@@ -269,14 +270,25 @@ client.exchangeInfo().then((data) => {
 	infos.symbols = symbols.groupedSymbols
 	infos.intervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w', '1M']
 	infos.binance = data
-}).then(client.accountInfo).then((data) => {
-	console.log('=== Connected to Binance ===')
-//	console.log(data)
 
-	const port = process.env.PORT || 3000
-	app.listen(port, () => {
-		console.log('=== Karl Crypto Bot | Started on port', port, '===')
+	const launchApp = () => {
+		console.log('=== Connected to Binance ===')
+		console.log('=== Trading', canTrade ? 'enable' : 'disabled', '===')
+		const port = process.env.PORT || 3000
+		app.listen(port, () => {
+			console.log('=== Karl Crypto Bot | Started on port', port, '===')
+		})
+	}
+
+	console.error('=== Checking Trading rights ===')
+	client.accountInfo().then((data) => {
+		canTrade = data.canTrade
+		launchApp()
+	}).catch((e) => {
+		console.error('=== Error : ', e.message, '===')
+		launchApp()
 	})
+
 }).catch((e) => {
 	console.error('=== ERROR ===')
 	console.error('===', e.message, '===')

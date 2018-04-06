@@ -3,6 +3,7 @@
 ## Table of Contents
 
 - [Disclaimer](#disclaimer)
+- [TODO](#todo)
 - [Binance API Key](#binance-api-key)
 - [Installation](#installation)
 - [Running the app](#running-the-app)
@@ -16,22 +17,36 @@ This project can send automatically **Sell Orders** to **Binance** at **Market P
 > We can not be responsible of bugs, orders not sent, network problem, money lost. You use this script as your own risk.
 > All investing and trading in the securities market involves risk. Any decisions to place trades in the financial markets, including trading in stock or options or other financial instruments, is a personal decision that should only be made after thorough research, including a personal risk and financial assessment, and the engagement of professional assistance to the extend you believe necessary. 
 
+## TODO
+
+- Persist database
+- Update a trailing stop
+- Set buy order
+- Set real gain ratio from buy price to stop
+- Send notification (email, sms…) on sell
+- Unit tests
+
 ## Binance API Key
 
-Before running this app you need an Api Key from Binance.
+> Api Keys are not required to run the app. Orders will not be sent to Binance.
+
+In order to send **Sell Orders** to Binance, you need an Api Key.
 
 - Go to the [Binance create api page](https://www.binance.com/userCenter/createApi.html)
 - Follow steps
 - Keep safe your new **API Key** and **API Secret**
 - Check : **Enable Trading**
 - (Optional) enable only a range of IPs
-
-## Installation
+- Add keys to your env
 
 ```sh
 export BINANCE_API_KEY='****'
 export BINANCE_API_SECRET='****'
+``
 
+## Installation
+
+```sh
 git clone https://github.com/KarlCrypto/bot.git
 cd bot
 
@@ -40,6 +55,10 @@ npm install
 
 ## Running the app
 
+> **Warning** : Everything is stored in memory at this moment. Stopping the app will delete all your trailing stops.
+
+> When this app is stopped, sell orders cannot be sent.
+
 ```sh
 npm run api
 ```
@@ -47,7 +66,9 @@ npm run api
 If everything works fine you should see
 ```sh
 === Connecting to Binance ===
+=== Checking Trading rights ===
 === Connected to Binance ===
+=== Trading enable (or disable) ===
 === Karl Crypto Bot | Started on port 3000 ===
 ```
 

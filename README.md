@@ -60,7 +60,7 @@ npm install
 > When this app is stopped, sell orders cannot be sent.
 
 ```sh
-npm run api
+npm start
 ```
 
 If everything works fine you should see

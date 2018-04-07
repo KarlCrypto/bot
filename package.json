@@ -16,7 +16,7 @@
     "api": "**.js"
   },
   "scripts": {
-    "api": "node api/api.js",
+    "start": "node bin/www",
     "watch": "npm-watch api"
   },
   "keywords": [

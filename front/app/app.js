@@ -130,9 +130,9 @@ controllerModule.controller('newTrailingStopsController', function ($scope, $htt
 
 				$scope.getStats(symbol)
 			}, (e) => {
+				$interval.cancel($scope.interval)
 				alert(e.data.error)
 				console.error('Error', e)
-				$interval.cancel($scope.interval)
 			})
 		}, 1000)
 	}
@@ -160,7 +160,8 @@ controllerModule.controller('newTrailingStopsController', function ($scope, $htt
 
 })
 
-angular.module('KarlCryptoBot.directive', []).directive('trailingStopsDirective', function () {
+let directiveModule = angular.module('KarlCryptoBot.directive', [])
+directiveModule.directive('trailingStopsDirective', function () {
 	return {
 		templateUrl: '/app/directives/trailing-stops.html',
 		scope: {
@@ -183,6 +184,46 @@ angular.module('KarlCryptoBot.directive', []).directive('trailingStopsDirective'
 					})
 				}
 			}
+		},
+	}
+})
+
+directiveModule.directive('tradingviewDirective', function () {
+	return {
+		templateUrl: '/app/directives/tradingview.html',
+		scope: {
+			symbol: '=',
+		},
+		link: (scope, element, attrs) => {
+			scope.$watch('symbol', function (newValue, oldValue) {
+				new TradingView.widget(
+					{
+						'autosize': true,
+						'symbol': 'BINANCE:' + newValue,
+						'interval': '60',
+						'timezone': 'Europe/Paris',
+						'theme': 'Light',
+						'style': '1',
+						'locale': 'fr',
+						'toolbar_bg': '#f1f3f6',
+						'enable_publishing': false,
+						'withdateranges': false,
+						'hide_side_toolbar': false,
+						'save_image': false,
+						'details': true,
+						'studies': [
+							'IchimokuCloud@tv-basicstudies',
+						],
+						'show_popup_button': true,
+						'popup_width': '1000',
+						'popup_height': '650',
+						'container_id': 'tradingview_f6cfb',
+					},
+				)
+			})
+		},
+		controller: function ($scope, $http) {
+
 		},
 	}
 })

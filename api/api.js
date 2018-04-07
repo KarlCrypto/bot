@@ -274,10 +274,6 @@ client.exchangeInfo().then((data) => {
 	const launchApp = () => {
 		console.log('=== Connected to Binance ===')
 		console.log('=== Trading', canTrade ? 'enable' : 'disabled', '===')
-		const port = process.env.PORT || 3000
-		app.listen(port, () => {
-			console.log('=== Karl Crypto Bot | Started on port', port, '===')
-		})
 	}
 
 	console.error('=== Checking Trading rights ===')
@@ -294,3 +290,5 @@ client.exchangeInfo().then((data) => {
 	console.error('===', e.message, '===')
 	console.error(e)
 })
+
+module.exports = app

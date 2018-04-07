@@ -1,4 +1,5 @@
 const _ = require('lodash')
+const path = require('path')
 
 const {TrailingStopsModel} = require('./models/TrailingStopsModel')
 const {TrailingStopModel} = require('./models/TrailingStopModel')
@@ -9,7 +10,7 @@ const app = express()
 const bodyParser = require('body-parser')
 
 app.use(bodyParser.json())
-app.use(express.static('front'))
+app.use(express.static(path.resolve(__dirname, './../front')))
 
 const Binance = require('binance-api-node').default
 const client = Binance({

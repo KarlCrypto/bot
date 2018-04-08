@@ -28,8 +28,6 @@ let canTrade = false
 app.post('/api/settings', (req, res) => {
 
 	console.log('Update settings with', req.body)
-	saveKeys(req.body)
-	return res.send({})
 	let testClient = Binance({
 		apiKey: req.body.binance.apiKey,
 		apiSecret: req.body.binance.apiSecret,

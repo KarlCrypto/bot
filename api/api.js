@@ -1,5 +1,6 @@
 const _ = require('lodash')
 const path = require('path')
+const fs = require('fs')
 
 const {TrailingStopsModel} = require('./models/TrailingStopsModel')
 const {TrailingStopModel} = require('./models/TrailingStopModel')
@@ -12,16 +13,45 @@ const bodyParser = require('body-parser')
 app.use(bodyParser.json())
 app.use(express.static(path.resolve(__dirname, './../front')))
 
+const settings = require('./db/settings.json')
 const Binance = require('binance-api-node').default
-const client = Binance({
-	apiKey: process.env.BINANCE_API_KEY,
-	apiSecret: process.env.BINANCE_API_SECRET,
+let client = Binance({
+	apiKey: _.get(settings, 'binance.apiKey', process.env.BINANCE_API_KEY),
+	apiSecret: _.get(settings, 'binance.apiSecret', process.env.BINANCE_API_SECRET),
 })
 
 let trailingStops = new TrailingStopsModel()
 let symbols = new SymbolsModel()
 let infos = {}
 let canTrade = false
+
+app.post('/api/settings', (req, res) => {
+
+	console.log('Update settings with', req.body)
+	saveKeys(req.body)
+	return res.send({})
+	let testClient = Binance({
+		apiKey: req.body.binance.apiKey,
+		apiSecret: req.body.binance.apiSecret,
+	})
+
+	testClient.accountInfo().then((data) => {
+		canTrade = data.canTrade
+		client = testClient
+
+		saveKeys(req.body)
+
+		return res.send(data)
+	}).catch((e) => {
+		console.error('=== Error : ', e.message, '===')
+		canTrade = false
+		return res.status(400).send({error: e.message})
+	})
+})
+
+app.get('/api/infos/trading', (req, res) => {
+	res.send({canTrade: canTrade})
+})
 
 app.get('/api/infos', (req, res) => {
 	res.send(infos)
@@ -151,35 +181,42 @@ app.delete('/api/trailingstops/:id', (req, res) => {
 	})
 })
 
-app.post('/api/trailingstops', (req, res) => {
-	// Check symbol
-	let Symbol = symbols.find(req.body.symbol)
+const addTrailingStop = (trailingStopRequest, res) => {
+	let Symbol = symbols.find(trailingStopRequest.Symbol.name)
 	if (!Symbol) {
-		return res.status(404).send({
-			error: 'Symbol [' + req.params.symbol + '] not found',
+		const error = 'Symbol [' + trailingStopRequest.Symbol.name + '] not found'
+		console.log(error)
+		return res ? res.status(404).send({
+			error: error,
 			validSymbols: infos.symbols,
-		})
+		}) : null
 	}
 
-	if (!req.body.margin.ratio && !req.body.margin.pips && !req.body.margin.price) {
-		return res.status(400).send({
-			error: 'Please fill a margin price or pips or ratio',
-		})
+	if (!trailingStopRequest.margin.ratio && !trailingStopRequest.margin.pips && !trailingStopRequest.margin.price) {
+		const error = 'Please fill a margin price or pips or ratio'
+		console.log(error)
+		return res ? res.status(400).send({
+			error: error,
+		}) : null
 	}
 
-	if (_.isNil(req.body.stop)) {
-		return res.status(400).send({
-			error: 'Please fill a stop price',
-		})
+	if (_.isNil(trailingStopRequest.stop)) {
+		const error = 'Please fill a stop price'
+		console.log(error)
+		return res ? res.status(400).send({
+			error: error,
+		}) : null
 	}
 
-	if (_.isNil(req.body.quantity)) {
-		return res.status(400).send({
-			error: 'Please fill a quantity to sell',
-		})
+	if (_.isNil(trailingStopRequest.quantity)) {
+		const error = 'Please fill a quantity to sell'
+		console.log(error)
+		return res ? res.status(400).send({
+			error: error,
+		}) : null
 	}
 
-	let trailingStop = new TrailingStopModel(Symbol, req)
+	let trailingStop = new TrailingStopModel(Symbol, trailingStopRequest)
 
 	console.log('=== New Trailing stop ===')
 	console.log(trailingStop)
@@ -207,6 +244,9 @@ app.post('/api/trailingstops', (req, res) => {
 			let isPriceOverCeil = Number(trade.price) > (currentTrailingStop.stop.last + currentTrailingStop.margin.price)
 			if (isPriceOverCeil) {
 				const oldStop = currentTrailingStop.stop.last
+				console.log('STOP', currentTrailingStop.stop.last)
+				console.log('Number(trade.price) ', Number(trade.price))
+				console.log('currentTrailingStop.margin.price ', currentTrailingStop.margin.price)
 				currentTrailingStop.stop.last = Symbol.roundForSymbol(Number(trade.price) - currentTrailingStop.margin.price)
 				const increasingPriceDelta = currentTrailingStop.stop.last - oldStop
 				currentTrailingStop.gain.pips = Symbol.pipsFromPrice(currentTrailingStop.stop.last - currentTrailingStop.stop.first)
@@ -259,7 +299,14 @@ app.post('/api/trailingstops', (req, res) => {
 
 	})
 	trailingStops.add(Symbol.name, trailingStop)
-	return res.send(trailingStop.toJson())
+	return res ? res.send(trailingStop.toJson()) : null
+}
+
+app.post('/api/trailingstops', (req, res) => {
+	// Check symbol
+	let trailingStopRequest = req.body
+
+	addTrailingStop(trailingStopRequest, res)
 })
 
 console.log('=== Connecting to Binance ===')
@@ -275,6 +322,7 @@ client.exchangeInfo().then((data) => {
 	const launchApp = () => {
 		console.log('=== Connected to Binance ===')
 		console.log('=== Trading', canTrade ? 'enable' : 'disabled', '===')
+		loadContext()
 	}
 
 	console.error('=== Checking Trading rights ===')
@@ -291,5 +339,83 @@ client.exchangeInfo().then((data) => {
 	console.error('===', e.message, '===')
 	console.error(e)
 })
+
+const dataPath = path.resolve(__dirname, './db/data.json')
+
+// Save action
+const saveKeys = (settings) => {
+	console.log('=== Saving Keys ===')
+
+	fs.writeFileSync(dataPath, JSON.stringify(settings, null, 2), 'utf-8')
+}
+
+const saveContext = () => {
+	console.log('=== Saving Context ===')
+
+	console.log('===', Object.keys(trailingStops.active).length, ' Active Trailing Stops found ===')
+	console.log('===', trailingStops.history.length, ' History Trailing Stops found ===')
+
+	for (let t in trailingStops.active) {
+		trailingStops.active[t].pause()
+	}
+
+	fs.writeFileSync(dataPath, JSON.stringify({
+		trailingStops: trailingStops,
+	}, null, 2), 'utf-8')
+}
+
+const loadContext = () => {
+	console.log('=== Loading Context ===')
+	if (!fs.existsSync(dataPath)) {
+		console.log('=== No Context ===')
+		return
+	}
+	const data = require(dataPath)
+	const trailingStopsSaved = data.trailingStops
+	if (!data || (data && !trailingStopsSaved) || (data && trailingStopsSaved && !trailingStopsSaved.active)) {
+		console.log('=== No Context ===')
+		return
+	}
+
+	console.log('===', Object.keys(trailingStopsSaved.active).length, ' Active Trailing Stops found ===')
+	console.log('===', trailingStopsSaved.history.length, ' History Trailing Stops found ===')
+
+	for (let t in trailingStopsSaved.active) {
+		addTrailingStop(trailingStopsSaved.active[t])
+	}
+	for (let t in trailingStopsSaved.history) {
+		const Symbol = symbols.find(trailingStopsSaved.history[t].Symbol.name)
+		trailingStops.history.push(new TrailingStopModel(Symbol, trailingStopsSaved.history[t]))
+	}
+}
+
+// On Close
+// https://stackoverflow.com/a/14032965/3236235
+const exitHandler = (options, err) => {
+	console.log('=== App is closing ===')
+	saveContext()
+
+	if (err) {
+		console.log(err.stack)
+	}
+	if (options.exit) {
+		process.exit()
+	}
+}
+
+process.stdin.resume()//so the program will not close instantly
+
+//do something when app is closing
+process.on('exit', exitHandler.bind(null, {}))
+
+//catches ctrl+c event
+process.on('SIGINT', exitHandler.bind(null, {exit: true}))
+
+// catches "kill pid" (for example: nodemon restart)
+process.on('SIGUSR1', exitHandler.bind(null, {exit: true}))
+process.on('SIGUSR2', exitHandler.bind(null, {exit: true}))
+
+//catches uncaught exceptions
+process.on('uncaughtException', exitHandler.bind(null, {exit: true}))
 
 module.exports = app

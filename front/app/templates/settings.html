@@ -1,0 +1,36 @@
+<div id="view-settings" class="container">
+    <button type="submit" class="btn btn-primary btn-lg float-right" ng-disabled="!canSend()" ng-click="submit()">
+        Update
+    </button>
+
+    <h1 class="h1">Settings</h1>
+    <hr>
+    <form>
+        <p>For security reasons your keys are not shown here.</p>
+        <div class="form-row justify-content-md-center">
+            <div class="form-group col-md-6">
+                <label for="api-key">Binance API Key</label>
+
+                <div class="input-group">
+                    <input type="text" class="form-control" id="api-key" ng-model="settings.binance.apiKey">
+                </div>
+            </div>
+            <div class="form-group col-md-6">
+                <label for="api-secret">Binance API Secret</label>
+
+                <div class="input-group">
+                    <input type="text" class="form-control" id="api-secret" ng-model="settings.binance.apiSecret">
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="alert alert-success" role="alert" ng-show="canTrade">
+        Trading is enabled !
+    </div>
+
+    <div class="alert alert-danger" role="alert" ng-hide="canTrade">
+        Trading is disabled !
+    </div>
+
+</div>

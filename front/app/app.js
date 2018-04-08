@@ -30,6 +30,7 @@ controllerModule.controller('symbolsController', function ($scope, $http) {
 		$scope.symbols = null
 	})
 })
+
 controllerModule.controller('trailingStopsController', function ($scope, $http, $interval) {
 	$scope.trailingStops = null
 
@@ -44,24 +45,70 @@ controllerModule.controller('trailingStopsController', function ($scope, $http, 
 	}, 1500)
 })
 
-controllerModule.controller('newTrailingStopsController', function ($scope, $http, $location, $interval) {
-	$scope.configuration = {
-		'start': null,
-		'symbol': null,
-		'stop': null,
-		'quantity': 0,
-		'margin': {
-			'pips': null,
-			'price': null,
-			'ratio': null,
+controllerModule.controller('settingsController', function ($scope, $http, $interval) {
+	$scope.settings = {
+		binance: {
+			apiKey: null,
+			apiSecret: null,
 		},
 	}
-	$scope.Symbol = null
+	$scope.canTrade = false
+
+	$http.get('/api/infos/trading').then((res) => {
+		$scope.canTrade = res.data.canTrade
+	}, (e) => {
+		alert(e.data.error)
+		console.error('Error', e)
+	})
+
+	$scope.canSend = () => {
+		return $scope.settings.binance.apiKey != null && $scope.settings.binance.apiSecret != null
+	}
+	$scope.submit = () => {
+		$http.post('/api/settings', $scope.settings).then((res) => {
+			alert('Saved !')
+			$scope.settings.binance.apiKey = null
+			$scope.settings.binance.apiSecret = null
+			console.log(res)
+		}, (e) => {
+			alert(e.data.error)
+			console.error('Error', e)
+		})
+	}
+
+})
+
+controllerModule.controller('newTrailingStopsController', function ($scope, $http, $location, $interval) {
+	$scope.configuration = {
+		start: {
+			price: null,
+		},
+		Symbol: null,
+		stop: {
+			last: null,
+		},
+		buy: {
+			price: null,
+		},
+		quantity: 0,
+		margin: {
+			pips: null,
+			price: null,
+			ratio: null,
+		},
+	}
 	$scope.statistics = {'1m': null, '5m': null, '15m': null, '1h': null, '4h': null, '1d': null}
+
+	$scope.refreshFromBuyPrice = (buyPrice) => {
+		if (buyPrice) {
+			$scope.configuration.buyPrice = buyPrice
+		}
+		$scope.refreshFromMarginPips()
+	}
 
 	$scope.refreshFromStop = (stop) => {
 		if (stop) {
-			$scope.configuration.stop = stop
+			$scope.configuration.stop.last = stop
 		}
 		$scope.refreshFromMarginPips()
 	}
@@ -70,32 +117,35 @@ controllerModule.controller('newTrailingStopsController', function ($scope, $htt
 		if (pips) {
 			$scope.configuration.margin.pips = pips
 		}
-		$scope.configuration.margin.price = Number(parseFloat($scope.configuration.margin.pips * $scope.Symbol.pips.value)).toFixed($scope.Symbol.pips.digits)
-		$scope.configuration.margin.ratio = Number(($scope.configuration.margin.price / $scope.configuration.stop) * 100).toFixed(2)
+		$scope.configuration.margin.price = Number(parseFloat($scope.configuration.margin.pips * $scope.configuration.Symbol.pips.value)).
+			toFixed($scope.configuration.Symbol.pips.digits)
+		$scope.configuration.margin.ratio = Number(($scope.configuration.margin.price / $scope.configuration.stop.last) * 100).toFixed(2)
 	}
 
 	$scope.refreshFromMarginPrice = (price) => {
 		if (price) {
 			$scope.configuration.margin.price = price
 		}
-		$scope.configuration.margin.pips = Math.round($scope.configuration.margin.price * Math.pow(10, $scope.Symbol.pips.digits))
-		$scope.configuration.margin.ratio = Number(($scope.configuration.margin.price / $scope.configuration.stop) * 100).toFixed(2)
+		$scope.configuration.margin.pips = Math.round($scope.configuration.margin.price * Math.pow(10, $scope.configuration.Symbol.pips.digits))
+		$scope.configuration.margin.ratio = Number(($scope.configuration.margin.price / $scope.configuration.stop.last) * 100).toFixed(2)
 	}
 
 	$scope.refreshFromMarginRatio = (ratio) => {
 		if (ratio) {
 			$scope.configuration.margin.ratio = ratio
 		}
-		$scope.configuration.margin.price = Number($scope.configuration.stop * $scope.configuration.margin.ratio / 100).toFixed($scope.Symbol.pips.digits)
-		$scope.configuration.margin.pips = Math.round($scope.configuration.margin.price * Math.pow(10, $scope.Symbol.pips.digits))
+		$scope.configuration.margin.price = Number($scope.configuration.stop.last * $scope.configuration.margin.ratio / 100).
+			toFixed($scope.configuration.Symbol.pips.digits)
+		$scope.configuration.margin.pips = Math.round($scope.configuration.margin.price * Math.pow(10, $scope.configuration.Symbol.pips.digits))
 	}
 
 	$scope.resetValues = () => {
 		$scope.configuration.margin.price = null
 		$scope.configuration.margin.ratio = null
 		$scope.configuration.margin.pips = null
-		$scope.configuration.start = null
-		$scope.configuration.stop = null
+		$scope.configuration.start.price = null
+		$scope.configuration.stop.last = null
+		$scope.configuration.Symbol = null
 		$scope.configuration.quantity = 0
 	}
 	$scope.resetStats = () => {
@@ -108,7 +158,7 @@ controllerModule.controller('newTrailingStopsController', function ($scope, $htt
 			if ($scope.statistics[interval] !== null) {
 				continue
 			}
-			$http.get('/api/average/' + $scope.configuration.symbol + '?interval=' + interval).then((res) => {
+			$http.get('/api/average/' + $scope.configuration.Symbol.name + '?interval=' + interval).then((res) => {
 				console.log('Average for', interval, res.data)
 				$scope.statistics[res.data.interval] = res.data
 			}, (e) => {
@@ -118,17 +168,18 @@ controllerModule.controller('newTrailingStopsController', function ($scope, $htt
 		}
 	}
 
-	$scope.selectSymbol = (symbol) => {
+	$scope.selectSymbol = (Symbol) => {
 		$interval.cancel($scope.interval)
-		$scope.configuration.symbol = symbol.name
+		console.log('Symbol', Symbol)
 		$scope.resetStats()
 		$scope.resetValues()
+		$scope.configuration.Symbol = {name: Symbol.name}
 		$scope.interval = $interval(() => {
-			$http.get('/api/prices/' + symbol.name, $scope.configuration).then((res) => {
+			$http.get('/api/prices/' + Symbol.name, $scope.configuration).then((res) => {
 				$scope.lastPrice = res.data.price
-				$scope.Symbol = res.data.Symbol
+				$scope.configuration.Symbol = res.data.Symbol
 
-				$scope.getStats(symbol)
+				$scope.getStats(Symbol)
 			}, (e) => {
 				$interval.cancel($scope.interval)
 				alert(e.data.error)
@@ -138,18 +189,17 @@ controllerModule.controller('newTrailingStopsController', function ($scope, $htt
 	}
 
 	$scope.prefillWith = (price) => {
-		$scope.configuration.stop = price
+		$scope.configuration.stop.last = price
 	}
 
 	$scope.resetSymbol = () => {
 		$interval.cancel($scope.interval)
-		$scope.configuration.symbol = null
+		$scope.configuration.Symbol = null
 	}
 
 	$scope.submit = () => {
 		$interval.cancel($scope.interval)
 		$http.post('/api/trailingstops', $scope.configuration).then((res) => {
-			alert('Trailing stop added !')
 			$location.path('/trailing-stops')
 			console.log('Trailing Stop', res)
 		}, (e) => {
@@ -245,6 +295,9 @@ app.config(function ($routeProvider) {
 	}).when('/symbols', {
 		controller: 'symbolsController',
 		templateUrl: '/app/templates/symbols.html',
+	}).when('/settings', {
+		controller: 'settingsController',
+		templateUrl: '/app/templates/settings.html',
 	}).otherwise({
 		templateUrl: '/app/templates/dashboard.html',
 	})

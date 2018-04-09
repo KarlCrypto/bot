@@ -54,12 +54,15 @@ controllerModule.controller('settingsController', function ($scope, $http, $inte
 	}
 	$scope.canTrade = false
 
-	$http.get('/api/infos/trading').then((res) => {
-		$scope.canTrade = res.data.canTrade
-	}, (e) => {
-		alert(e.data.error)
-		console.error('Error', e)
-	})
+	$scope.refreshCanTrade = () => {
+		$http.get('/api/infos/trading').then((res) => {
+			$scope.canTrade = res.data.canTrade
+		}, (e) => {
+			alert(e.data.error)
+			console.error('Error', e)
+		})
+	}
+	$scope.refreshCanTrade()
 
 	$scope.canSend = () => {
 		return $scope.settings.binance.apiKey != null && $scope.settings.binance.apiSecret != null
@@ -70,6 +73,7 @@ controllerModule.controller('settingsController', function ($scope, $http, $inte
 			$scope.settings.binance.apiKey = null
 			$scope.settings.binance.apiSecret = null
 			console.log(res)
+			$scope.refreshCanTrade()
 		}, (e) => {
 			alert(e.data.error)
 			console.error('Error', e)

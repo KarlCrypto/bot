@@ -10,10 +10,14 @@ const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
 
-app.use(bodyParser.json())
-app.use(express.static(path.resolve(__dirname, './../front')))
+const appPath = app && typeof app.getAppPath === 'function' ? app.getAppPath() : path.resolve(__dirname, '../')
+const settingsPath = path.resolve(appPath, 'api', 'db', 'settings.json')
+const dataPath = path.resolve(appPath, 'api', 'db', 'data.json')
 
-const settings = require('./db/settings.json')
+app.use(bodyParser.json())
+app.use(express.static(path.resolve(appPath, 'front')))
+
+const settings = require(settingsPath)
 const Binance = require('binance-api-node').default
 let client = Binance({
 	apiKey: _.get(settings, 'binance.apiKey', process.env.BINANCE_API_KEY),
@@ -338,13 +342,12 @@ client.exchangeInfo().then((data) => {
 	console.error(e)
 })
 
-const dataPath = path.resolve(__dirname, './db/data.json')
 
 // Save action
 const saveKeys = (settings) => {
 	console.log('=== Saving Keys ===')
 
-	fs.writeFileSync(dataPath, JSON.stringify(settings, null, 2), 'utf-8')
+	fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8')
 }
 
 const saveContext = () => {

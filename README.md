@@ -5,6 +5,7 @@
 - [Disclaimer](#disclaimer)
 - [TODO](#todo)
 - [Binance API Key](#binance-api-key)
+- [Docker](#docker)
 - [Installation](#installation)
 - [Running the app](#running-the-app)
 - [Usage](#usage)
@@ -51,6 +52,33 @@ git clone https://github.com/KarlCrypto/bot.git
 cd bot
 
 npm install
+```
+
+## Docker
+
+You can run directly the bot without installing everying, just using Docker.
+Please set a volume if you want to store your settings and trailing stops. (rename : ~/path/to/local/db to a path of your choice)
+
+```sh
+docker run -p 3000:3000 -v /path/to/local/db:/usr/src/api/db karlcrypto/bot
+```
+
+or the docker-compose.yml sample
+
+```yaml
+version: '3'
+services:
+
+  bot:
+    image: 'karlcrypto/bot'
+    user: "node"
+    environment:
+      BINANCE_API_KEY: '${BINANCE_API_KEY}'
+      BINANCE_API_SECRET: '${BINANCE_API_SECRET}'
+    ports:
+      - '3000:3000'
+    #volumes:
+    #  - /path/to/local/db:/usr/src/api/db
 ```
 
 ## Running the app

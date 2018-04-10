@@ -17,7 +17,11 @@ const dataPath = path.resolve(appPath, 'api', 'db', 'data.json')
 app.use(bodyParser.json())
 app.use(express.static(path.resolve(appPath, 'front')))
 
-const settings = require(settingsPath)
+// Load settings
+let settings = {binance:{}}
+if ( fs.existsSync(settingsPath) ){
+	settings = require(settingsPath)
+}
 const Binance = require('binance-api-node').default
 let client = Binance({
 	apiKey: _.get(settings, 'binance.apiKey', process.env.BINANCE_API_KEY),
@@ -37,7 +41,7 @@ app.post('/api/settings', (req, res) => {
 		apiSecret: req.body.binance.apiSecret,
 	})
 
-	testClient.accountInfo().then((data) => {
+	testClient.accountInfo({useServerTime:true}).then((data) => {
 		canTrade = data.canTrade
 		client = testClient
 
@@ -272,6 +276,7 @@ const addTrailingStop = (trailingStopRequest, res) => {
 					if (canTrade && currentTrailingStop.quantity > 0) {
 						// Sell at market price for quantity
 						client.order({
+							useServerTime:true,
 							symbol: Symbol.name,
 							side: 'SELL',
 							type: 'MARKET',
@@ -328,7 +333,7 @@ client.exchangeInfo().then((data) => {
 	}
 
 	console.error('=== Checking Trading rights ===')
-	client.accountInfo().then((data) => {
+	client.accountInfo({useServerTime:true}).then((data) => {
 		canTrade = data.canTrade
 		launchApp()
 	}).catch((e) => {
@@ -411,6 +416,7 @@ process.on('exit', exitHandler.bind(null, {}))
 
 //catches ctrl+c event
 process.on('SIGINT', exitHandler.bind(null, {exit: true}))
+process.on('SIGTERM', exitHandler.bind(null, {exit: true}))
 
 // catches "kill pid" (for example: nodemon restart)
 process.on('SIGUSR1', exitHandler.bind(null, {exit: true}))

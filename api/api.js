@@ -18,8 +18,8 @@ app.use(bodyParser.json())
 app.use(express.static(path.resolve(appPath, 'front')))
 
 // Load settings
-let settings = {binance:{}}
-if ( fs.existsSync(settingsPath) ){
+let settings = {binance: {}}
+if (fs.existsSync(settingsPath)) {
 	settings = require(settingsPath)
 }
 const Binance = require('binance-api-node').default
@@ -41,7 +41,7 @@ app.post('/api/settings', (req, res) => {
 		apiSecret: req.body.binance.apiSecret,
 	})
 
-	testClient.accountInfo({useServerTime:true}).then((data) => {
+	testClient.accountInfo({useServerTime: true}).then((data) => {
 		canTrade = data.canTrade
 		client = testClient
 
@@ -60,7 +60,7 @@ app.get('/api/infos/trading', (req, res) => {
 })
 
 app.get('/api/infos', (req, res) => {
-	res.send(Object.assign({canTrade:canTrade},infos))
+	res.send(Object.assign({canTrade: canTrade}, infos))
 })
 
 app.get('/api/infos/symbols', (req, res) => {
@@ -224,8 +224,8 @@ const addTrailingStop = (trailingStopRequest, res) => {
 
 	let trailingStop = new TrailingStopModel(Symbol, trailingStopRequest)
 
-	console.log('=== New Trailing stop ===')
-	console.log(trailingStop)
+	console.log('=== New Trailing stop [', trailingStop.Symbol.name, '] ===')
+//	console.log(trailingStop)
 
 	trailingStop.socket = client.ws.trades([Symbol.name], trade => {
 		let currentTrailingStop = trailingStops.findBySymbol(trade.symbol)
@@ -242,8 +242,8 @@ const addTrailingStop = (trailingStopRequest, res) => {
 
 		if (currentTrailingStop.canRun()) {
 			currentTrailingStop.run()
-			console.log('=== Start Trailing stop ===')
-			console.log(currentTrailingStop.toJson())
+			console.log('=== Start Trailing stop [', currentTrailingStop.Symbol.name, '] ===')
+//			console.log(currentTrailingStop.toJson())
 		}
 
 		if (currentTrailingStop.isRunning()) {
@@ -276,7 +276,7 @@ const addTrailingStop = (trailingStopRequest, res) => {
 					if (canTrade && currentTrailingStop.quantity > 0) {
 						// Sell at market price for quantity
 						client.order({
-							useServerTime:true,
+							useServerTime: true,
 							symbol: Symbol.name,
 							side: 'SELL',
 							type: 'MARKET',
@@ -317,6 +317,11 @@ app.post('/api/trailingstops', (req, res) => {
 })
 
 console.log('=== Connecting to Binance ===')
+const launchApp = () => {
+	console.log('=== Trading', canTrade ? 'enable' : 'disabled', '===')
+	loadContext()
+}
+
 client.exchangeInfo().then((data) => {
 	// Enrich informations
 	symbols = new SymbolsModel(data.symbols)
@@ -326,14 +331,9 @@ client.exchangeInfo().then((data) => {
 	infos.intervals = ['1m', '3m', '5m', '15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w', '1M']
 	infos.binance = data
 
-	const launchApp = () => {
-		console.log('=== Connected to Binance ===')
-		console.log('=== Trading', canTrade ? 'enable' : 'disabled', '===')
-		loadContext()
-	}
-
+	console.log('=== Connected to Binance ===')
 	console.error('=== Checking Trading rights ===')
-	client.accountInfo({useServerTime:true}).then((data) => {
+	client.accountInfo({useServerTime: true}).then((data) => {
 		canTrade = data.canTrade
 		launchApp()
 	}).catch((e) => {
@@ -345,8 +345,8 @@ client.exchangeInfo().then((data) => {
 	console.error('=== ERROR ===')
 	console.error('===', e.message, '===')
 	console.error(e)
+	launchApp()
 })
-
 
 // Save action
 const saveKeys = (settings) => {
@@ -398,13 +398,13 @@ const loadContext = () => {
 // On Close
 // https://stackoverflow.com/a/14032965/3236235
 const exitHandler = (options, err) => {
-	console.log('=== App is closing ===')
-	saveContext()
+	console.log('=== App is closing [', options.signal, '] ===')
 
 	if (err) {
 		console.log(err.stack)
 	}
 	if (options.exit) {
+		saveContext()
 		process.exit()
 	}
 }
@@ -412,17 +412,17 @@ const exitHandler = (options, err) => {
 process.stdin.resume()//so the program will not close instantly
 
 //do something when app is closing
-process.on('exit', exitHandler.bind(null, {}))
+process.on('exit', exitHandler.bind(null, {signal: 'exit'}))
 
 //catches ctrl+c event
-process.on('SIGINT', exitHandler.bind(null, {exit: true}))
-process.on('SIGTERM', exitHandler.bind(null, {exit: true}))
+process.on('SIGINT', exitHandler.bind(null, {signal: 'SIGINT', exit: true}))
+process.on('SIGTERM', exitHandler.bind(null, {signal: 'SIGTERM', exit: true}))
 
 // catches "kill pid" (for example: nodemon restart)
-process.on('SIGUSR1', exitHandler.bind(null, {exit: true}))
-process.on('SIGUSR2', exitHandler.bind(null, {exit: true}))
+process.on('SIGUSR1', exitHandler.bind(null, {signal: 'SIGUSR1', exit: true}))
+process.on('SIGUSR2', exitHandler.bind(null, {signal: 'SIGUSR2', exit: true}))
 
 //catches uncaught exceptions
-process.on('uncaughtException', exitHandler.bind(null, {exit: true}))
+process.on('uncaughtException', exitHandler.bind(null, {signal: 'uncaughtException', exit: true}))
 
 module.exports = app

@@ -81,6 +81,13 @@ services:
     #  - /path/to/local/db:/usr/src/api/db
 ```
 
+### Building Docker image (dev)
+
+```sh
+docker build . -t karlcrypto/bot
+docker run -p 3000:3000 -v ~/db:/usr/src/api/db karlcrypto/bot
+```
+
 ## Running the app
 
 > **Warning** : Everything is stored in memory at this moment. Stopping the app will delete all your trailing stops.

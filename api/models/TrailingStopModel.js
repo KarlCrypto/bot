@@ -133,12 +133,13 @@ const TrailingStopModel = function (Symbol, req) {
 	}
 
 	this.pause = () => {
-		this.status = Status.Paused
+		if (this.status !== Status.Waiting) {
+			this.status = Status.Paused
+		}
 		this.socket()
 	}
 
 	this.shouldSell = () => {
-		console.log('Should sell', this.Symbol.name, Symbol.roundForSymbol(this.price), Symbol.roundForSymbol(this.stop.last))
 		return Symbol.roundForSymbol(this.price) <= Symbol.roundForSymbol(this.stop.last)
 	}
 

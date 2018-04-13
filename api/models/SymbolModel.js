@@ -28,7 +28,7 @@ SymbolModel.prototype.pipsFromPrice = function (price) {
 }
 
 SymbolModel.prototype.toJson = function () {
-	return _.pick(this, ['name', 'pips'])
+	return _.pick(this, ['name', 'pips', 'infos'])
 }
 
 exports.SymbolModel = SymbolModel

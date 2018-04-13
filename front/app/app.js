@@ -1,24 +1,36 @@
 let controllerModule = angular.module('KarlCryptoBot.controllers', [])
 
-controllerModule.controller('mainController', function ($scope, $http, $route, $routeParams, $location) {
+controllerModule.controller('mainController', function ($scope, $http, $route, $routeParams, $location, $interval) {
 	$scope.route = $route
 	$scope.routeParams = $routeParams
 	$scope.location = $location
 
+	$scope.secret = false
+	$scope.canTrade = false
 	$scope.infos = null
+	$scope.hideAssets = false
 
-	$http.get('/api/infos').then((res) => {
-		$scope.infos = res.data
-		let allSymbols = []
-		let symbols = res.data.symbols
-		for (let quotedAsset in symbols) {
-			symbols[quotedAsset].map((s) => {allSymbols.push({quotedAsset: quotedAsset, name: s})})
-		}
-		$scope.allSymbols = allSymbols
-	}, (e) => {
-		console.error('Error', e)
-		$scope.infos = null
-	})
+	$interval(() => {
+		$http.get('/api/infos').then((res) => {
+			$scope.infos = res.data
+			$scope.canTrade = $scope.infos.canTrade
+			let allSymbols = []
+			let symbols = res.data.symbols
+			for (let quotedAsset in symbols) {
+				symbols[quotedAsset].map((s) => {allSymbols.push({quotedAsset: quotedAsset, name: s})})
+			}
+			$scope.allSymbols = allSymbols
+		}, (e) => {
+			console.error('Error', e)
+			$scope.infos = null
+			$scope.canTrade = false
+		})
+	}, 5000)
+
+
+	$scope.togglePrivacy = () => {
+		$scope.hideAssets = !$scope.hideAssets
+	}
 })
 controllerModule.controller('symbolsController', function ($scope, $http) {
 	$scope.symbols = null
@@ -52,11 +64,10 @@ controllerModule.controller('settingsController', function ($scope, $http, $inte
 			apiSecret: null,
 		},
 	}
-	$scope.canTrade = false
 
 	$scope.refreshCanTrade = () => {
 		$http.get('/api/infos/trading').then((res) => {
-			$scope.canTrade = res.data.canTrade
+			$scope.$parent.canTrade = res.data.canTrade
 		}, (e) => {
 			alert(e.data.error)
 			console.error('Error', e)
@@ -220,6 +231,8 @@ directiveModule.directive('trailingStopsDirective', function () {
 		templateUrl: '/app/directives/trailing-stops.html',
 		scope: {
 			trailingStops: '=',
+			distance: '=',
+			hideAssets: '=',
 		},
 		controller: function ($scope, $http) {
 

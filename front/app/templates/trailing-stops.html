@@ -7,9 +7,9 @@
         Loading…
     </div>
     <div ng-show="trailingStops">
-        <trailing-stops-directive trailing-stops="trailingStops.active"></trailing-stops-directive>
+        <trailing-stops-directive trailing-stops="trailingStops.active" distance="true" hideAssets="$parent.hideAssets"></trailing-stops-directive>
 
         <h1 class="h1">Old Trailing Stops</h1>
-        <trailing-stops-directive trailing-stops="trailingStops.history"></trailing-stops-directive>
+        <trailing-stops-directive trailing-stops="trailingStops.history" distance="false" hideAssets="$parent.hideAssets"></trailing-stops-directive>
     </div>
 </div>

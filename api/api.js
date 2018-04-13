@@ -60,7 +60,7 @@ app.get('/api/infos/trading', (req, res) => {
 })
 
 app.get('/api/infos', (req, res) => {
-	res.send(infos)
+	res.send(Object.assign({canTrade:canTrade},infos))
 })
 
 app.get('/api/infos/symbols', (req, res) => {

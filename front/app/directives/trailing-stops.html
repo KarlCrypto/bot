@@ -1,22 +1,19 @@
 <p ng-show="trailingStops.length===0">No active trailing stops yet !</p>
 <div class="table-responsive" ng-show="trailingStops.length>0">
-
     <table class="table table-striped text-center align-middle">
         <thead class="thead-light">
         <tr>
+            <th scope="col" colspan="{{distance?4:3}}" style="background: none; border-top:0 none; border-left:0 none">&nbsp;</th>
+            <th scope="col" colspan="2">Current</th>
             <th scope="col" colspan="3" style="background: none; border-top:0 none; border-left:0 none">&nbsp;</th>
-            <th scope="col" colspan="3">Prices</th>
-            <th scope="col" colspan="2">Gains</th>
         </tr>
         <tr>
             <th scope="col" width="7%">Symbol</th>
-            <th scope="col" width="5%">Quantity</th>
-            <th scope="col">Distance</th>
-            <th scope="col" width="10%">Current</th>
-            <th scope="col" width="10%">Last Stop</th>
-            <th scope="col" width="10%">Buy price</th>
-            <th scope="col" width="7%">Stop</th>
-            <th scope="col" width="7%">Total</th>
+            <th scope="col" ng-show="distance">Distance</th>
+            <th scope="col" width="10%">Bought</th>
+            <th scope="col" width="10%">Stop</th>
+            <th scope="col" width="10%">Price</th>
+            <th scope="col" width="10%">Value</th>
             <th scope="col" width="15%">Status</th>
             <th scope="col" width="2%">Action</th>
         </tr>
@@ -24,9 +21,13 @@
         <tbody>
 
         <tr ng-repeat="trailingStop in trailingStops">
-            <td class="align-middle">{{trailingStop.Symbol.name}}</td>
-            <td class="align-middle">{{trailingStop.quantity}}</td>
+            <!-- Symbol name : TRXETH -->
             <td class="align-middle">
+                <strong>{{trailingStop.Symbol.name}}</strong>
+            </td>
+
+            <!-- Distance -->
+            <td class="align-middle" ng-show="distance">
                 <div class="progress" ng-show="trailingStop.distance">
                     <div class="progress-bar bg-success" role="progressbar" style="width: {{trailingStop.distance.ratio*100|number:2}}%" aria-valuenow="30"
                          aria-valuemin="0" aria-valuemax="100">{{trailingStop.distance.pips}}
@@ -36,29 +37,54 @@
                     </div>
                 </div>
             </td>
-            <td class="align-middle"><span class="font-weight-bold">{{trailingStop.price|number:trailingStop.Symbol.pips.digits}}</span></td>
-            <td class="align-middle">{{trailingStop.stop.last|number:trailingStop.Symbol.pips.digits}}</td>
+
+            <!-- Bought -->
             <td class="align-middle">
                 <div ng-show="trailingStop.buy.price">
                     {{trailingStop.buy.price|number:trailingStop.Symbol.pips.digits}}
+                    <div>&times;<strong ng-class="{blur:$parent.$parent.hideAssets}">{{trailingStop.quantity}}</strong></div>
                 </div>
                 <div ng-hide="trailingStop.buy.price">
                     -
                 </div>
             </td>
-            <td class="align-middle">+{{trailingStop.gain.pips}}<br/>+{{trailingStop.gain.ratio*100|number:2}}%</td>
+
+            <!-- Minimum Gain -->
             <td class="align-middle">
-                <div ng-show="trailingStop.buy.price">
-                    {{trailingStop.totalGain.pips}}<br/>{{trailingStop.totalGain.ratio*100|number:2}}%
-                </div>
-                <div ng-hide="trailingStop.buy.price">
-                    -
+                {{trailingStop.stop.last|number:trailingStop.Symbol.pips.digits}}
+                <div ng-show="trailingStop.totalGain.ratio" class="font-weight-bold"
+                     ng-class="{'text-success':trailingStop.totalGain.ratio>0,'text-danger':trailingStop.totalGain.ratio<0}">
+                    {{trailingStop.totalGain.ratio>0?'+':''}}{{trailingStop.totalGain.ratio*100|number:2}}%
                 </div>
             </td>
+
+            <!-- Current value in quote Asset -->
+            <td class="text-right" ng-class="{blur:$parent.$parent.hideAssets}">
+                <span ng-show="trailingStop.buy.value">
+                    {{trailingStop.buy.value|number:8}} {{trailingStop.Symbol.infos.quoteAsset}}
+                </span>
+                <span ng-show="trailingStop.current.value"
+                      ng-class="{'text-success':trailingStop.current.ratio>0,'text-danger':trailingStop.current.ratio<0}">
+                    {{trailingStop.current.ratio>0?'+':''}}{{trailingStop.current.value|number:8}}&nbsp;{{trailingStop.Symbol.infos.quoteAsset}}
+                </span>
+            </td>
+
+            <!-- Current price -->
+            <td class="align-middle">
+                <span class="font-weight-bold">{{trailingStop.price|number:trailingStop.Symbol.pips.digits}}</span>
+                <div ng-show="trailingStop.price && trailingStop.buy.price" class="font-weight-bold"
+                     ng-class="{'text-success':trailingStop.current.ratio>0,'text-danger':trailingStop.current.ratio<0}">
+                    {{trailingStop.current.ratio>0?'+':''}}{{trailingStop.current.ratio*100|number:2}}%
+                </div>
+            </td>
+
+            <!-- Status -->
             <td class="align-middle">
                 <span ng-show="shouldShowStatusMessage(trailingStop)" class="text-info">{{trailingStop.statusMessage}}</span>
                 <time ng-hide="shouldShowStatusMessage(trailingStop)" am-time-ago="{{trailingStop.start.time}}"></time>
             </td>
+
+            <!-- Action -->
             <td class="align-middle">
                 <button type="button" class="btn btn-danger btn-sm" ng-click="stop(trailingStop)">X</button>
             </td>

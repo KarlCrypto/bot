@@ -52,9 +52,16 @@
                     <label for="stop">First Stop</label>
                     <input type="text" class="form-control" id="stop" ng-model="configuration.stop.last" ng-change="refreshFromStop()">
                 </div>
-                <div class="form-group col-md-4">
-                    <label for="stop">Quantity to sell (Market order)</label>
+                <div class="form-group col-md-2">
+                    <label for="stop">Quantity to sell</label>
                     <input type="text" class="form-control" id="quantity" ng-model="configuration.quantity">
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="stop">Order type</label>
+                    <button class="btn form-control" ng-class="{'btn-primary':configuration.sell.market,'btn-warning':!configuration.sell.market}" id="sellType"
+                            ng-model="configuration.sell.market" ng-click="configuration.sell.market=!configuration.sell.market">
+                        {{configuration.sell.market?'Market':'Limit'}} Order
+                    </button>
                 </div>
             </div>
 

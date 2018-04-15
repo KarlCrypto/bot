@@ -1,0 +1,81 @@
+<div id="view-trailing-stop">
+
+    <h1 class="h1">Trailing Stop | <span class="text-primary">{{trailingStop.Symbol.name}}</span></h1>
+
+    <div ng-show="trailingStop">
+        <trailing-stops-directive trailing-stops="[trailingStop]" distance="true" hideAssets="$parent.hideAssets"></trailing-stops-directive>
+    </div>
+
+    <hr>
+
+    <button type="submit" class="btn btn-primary"
+            ng-show="trailingStop.status.value===3||trailingStop.status.value===4" ng-click="cancel()">back
+    </button>
+
+
+    <div ng-show="trailingStop.status.value===4">
+        <hr>
+        <h1 class="h1">Selling status</h1>
+        <h4 class="h4">Order type : {{trailingStop.sell.market?'Market':'Limit'}}</h4>
+        <p ng-show="trailingStop.sell.status.length===0">No status response yet</p>
+
+        <div ng-repeat="status in trailingStop.sell.status" class="alert alert-dark">
+            <pre>{{status}}</pre>
+        </div>
+    </div>
+    <form ng-hide="trailingStop.status.value===3||trailingStop.status.value===4">
+
+
+        <div ng-show="trailingStop.Symbol">
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="start">Start if price >= <span class="small">(Optional)</span></label>
+                    <input ng-disabled="trailingStop.status.value!==1" type="text" class="form-control" id="start" ng-model="trailingStop.start.price">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="stop">First Stop</label>
+                    <input type="text" class="form-control" id="stop" ng-model="trailingStop.stop.last" ng-change="refreshFromStop()">
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="stop">Quantity to sell</label>
+                    <input type="text" class="form-control" id="quantity" ng-model="trailingStop.quantity">
+                </div>
+                <div class="form-group col-md-2">
+                    <label for="stop">Order type</label>
+                    <button class="btn form-control" ng-class="{'btn-primary':trailingStop.sell.market,'btn-warning':!trailingStop.sell.market}" id="sellType"
+                            ng-model="trailingStop.sell.market" ng-click="trailingStop.sell.market=!trailingStop.sell.market">
+                        {{trailingStop.sell.market?'Market':'Limit'}} Order
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label for="price">Margin Ratio</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="margin.ratio" ng-model="trailingStop.margin.ratio" ng-change="refreshFromMarginRatio()">
+                        <div class="input-group-prepend">
+                            <div class="input-group-text">%</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="start">Margin Price</label>
+                    <input type="text" class="form-control" id="margin.price" ng-model="trailingStop.margin.price" ng-change="refreshFromMarginPrice()">
+                </div>
+                <div class="form-group col-md-4">
+                    <label for="stop">Margin Pips</label>
+                    <input type="text" class="form-control" id="margin.pips" ng-model="trailingStop.margin.pips" ng-change="refreshFromMarginPips()">
+                </div>
+
+                <div class="form-group text-center col-md-12">
+                    <button type="submit" class="btn btn-link text-info btn-sm" ng-show="trailingStop.Symbol" ng-click="cancel()">back</button>
+                    <button type="submit" class="btn btn-primary btn-lg " ng-show="trailingStop.Symbol" ng-click="update()">Save</button>
+                </div>
+
+            </div>
+
+        </div>
+    </form>
+
+</div>

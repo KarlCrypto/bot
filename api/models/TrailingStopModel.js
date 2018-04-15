@@ -21,7 +21,7 @@ const Status = {
 }
 
 const TrailingStopModel = function (Symbol, req) {
-	this.id = uuid()
+	this.id = _.get(req, 'id', uuid())
 	this.Symbol = Symbol
 	this.price = req.price || null
 	this.quantity = Number(req.quantity)
@@ -55,7 +55,11 @@ const TrailingStopModel = function (Symbol, req) {
 		pips: Number(req.margin.pips) || null,
 		price: Number(req.margin.price) || null,
 	}
-	this.sellPrice = req.sellPrice || null
+	this.sell = {
+		market: _.get(req, 'sell.market', true),
+		price: _.get(req, 'sell.price', 0),
+		status: _.get(req, 'sell.status', []),
+	}
 	this.gain = {
 		pips: _.get(req, 'gain.pips', 0),
 		ratio: _.get(req, 'gain.ratio', 0),
@@ -136,17 +140,19 @@ const TrailingStopModel = function (Symbol, req) {
 		if (this.status !== Status.Waiting) {
 			this.status = Status.Paused
 		}
-		this.socket()
+		if (typeof this.socket === 'function') {
+			this.socket()
+		}
 	}
 
 	this.shouldSell = () => {
 		return Symbol.roundForSymbol(this.price) <= Symbol.roundForSymbol(this.stop.last)
 	}
 
-	this.sell = () => {
+	this.sold = () => {
 		this.status = Status.Finished
 		this.stop.time = Date.now()
-		this.sellPrice = this.price
+		this.sell.price = this.price
 		this.stop.delta = Symbol.roundForSymbol(this.stop.last - this.stop.first)
 	}
 
@@ -157,7 +163,11 @@ const TrailingStopModel = function (Symbol, req) {
 	}
 
 	this.toJson = () => {
-		let fields = ['id', 'status', 'price', 'start', 'stop', 'margin', 'gain', 'running', 'sellPrice', 'quantity', 'buy', 'totalGain', 'current']
+		this.updateDistance()
+		this.updateTotalGain()
+		this.updateCurrent()
+
+		let fields = ['id', 'status', 'price', 'start', 'stop', 'margin', 'gain', 'running', 'sell', 'quantity', 'buy', 'totalGain', 'current']
 		if (this.status === Status.Running) {
 			fields.push('distance')
 		}

@@ -1,4 +1,4 @@
-<p ng-show="trailingStops.length===0">No active trailing stops yet !</p>
+<p ng-show="trailingStops.length===0">No trailing stops yet !</p>
 <div class="table-responsive" ng-show="trailingStops.length>0">
     <table class="table table-striped text-center align-middle">
         <thead class="thead-light">
@@ -12,10 +12,10 @@
             <th scope="col" ng-show="distance">Distance</th>
             <th scope="col" width="10%">Bought</th>
             <th scope="col" width="10%">Stop</th>
-            <th scope="col" width="10%">Price</th>
             <th scope="col" width="10%">Value</th>
-            <th scope="col" width="15%">Status</th>
-            <th scope="col" width="2%">Action</th>
+            <th scope="col" width="10%">Price</th>
+            <th scope="col" width="10%">Status</th>
+            <th scope="col" width="11%">Action</th>
         </tr>
         </thead>
         <tbody>
@@ -52,9 +52,13 @@
             <!-- Minimum Gain -->
             <td class="align-middle">
                 {{trailingStop.stop.last|number:trailingStop.Symbol.pips.digits}}
-                <div ng-show="trailingStop.totalGain.ratio" class="font-weight-bold"
-                     ng-class="{'text-success':trailingStop.totalGain.ratio>0,'text-danger':trailingStop.totalGain.ratio<0}">
-                    {{trailingStop.totalGain.ratio>0?'+':''}}{{trailingStop.totalGain.ratio*100|number:2}}%
+                <div ng-show="trailingStop.buy.price && gainToStopRatio(trailingStop)" class="font-weight-bold"
+                     ng-class="{'text-success':gainToStopRatio(trailingStop)>0,'text-danger':gainToStopRatio(trailingStop)<0}">
+                    {{gainToStopRatio(trailingStop)>0?'+':''}}{{gainToStopRatio(trailingStop)*100|number:2}}%
+                </div>
+                <div ng-show="!trailingStop.buy.price && gainOffStopRatio(trailingStop)" class="font-weight-bold"
+                     ng-class="{'text-success':gainOffStopRatio(trailingStop)>0}">
+                    +{{gainOffStopRatio(trailingStop)*100|number:2}}%
                 </div>
             </td>
 
@@ -73,8 +77,8 @@
             <td class="align-middle">
                 <span class="font-weight-bold">{{trailingStop.price|number:trailingStop.Symbol.pips.digits}}</span>
                 <div ng-show="trailingStop.price && trailingStop.buy.price" class="font-weight-bold"
-                     ng-class="{'text-success':trailingStop.current.ratio>0,'text-danger':trailingStop.current.ratio<0}">
-                    {{trailingStop.current.ratio>0?'+':''}}{{trailingStop.current.ratio*100|number:2}}%
+                     ng-class="{'text-success':gainToCurrentRatio(trailingStop)>0,'text-danger':gainToCurrentRatio(trailingStop)<0}">
+                    {{gainToCurrentRatio(trailingStop)>0?'+':''}}{{gainToCurrentRatio(trailingStop)*100|number:2}}%
                 </div>
             </td>
 
@@ -86,6 +90,8 @@
 
             <!-- Action -->
             <td class="align-middle">
+                <button type="button" class="btn btn-info btn-sm" ng-click="edit(trailingStop)" ng-hide="trailingStop.status.value===3||trailingStop.status.value===4">edit</button>
+                <button type="button" class="btn btn-info btn-sm" ng-click="edit(trailingStop)" ng-show="trailingStop.status.value===4">infos</button>
                 <button type="button" class="btn btn-danger btn-sm" ng-click="stop(trailingStop)">X</button>
             </td>
         </tr>

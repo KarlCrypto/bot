@@ -27,7 +27,6 @@ controllerModule.controller('mainController', function ($scope, $http, $route, $
 		})
 	}, 5000)
 
-
 	$scope.togglePrivacy = () => {
 		$scope.hideAssets = !$scope.hideAssets
 	}
@@ -93,6 +92,73 @@ controllerModule.controller('settingsController', function ($scope, $http, $inte
 
 })
 
+controllerModule.controller('editTrailingStopsController', function ($scope, $http, $location, $routeParams, $interval) {
+	let id = $routeParams.id
+	$scope.trailingStop = null
+
+	$http.get('/api/trailingstops/' + id).then((res) => {
+		$scope.trailingStop = res.data
+		$scope.refreshFromMarginPips()
+	}, (e) => {
+		alert(e.data.error)
+		console.error('Error', e)
+	})
+
+	$scope.refreshFromBuyPrice = (buyPrice) => {
+		if (buyPrice) {
+			$scope.trailingStop.buyPrice = buyPrice
+		}
+		$scope.refreshFromMarginPips()
+	}
+
+	$scope.refreshFromStop = (stop) => {
+		if (stop) {
+			$scope.trailingStop.stop.last = stop
+		}
+		$scope.refreshFromMarginPips()
+	}
+
+	$scope.refreshFromMarginPips = (pips) => {
+		if (pips) {
+			$scope.trailingStop.margin.pips = pips
+		}
+		$scope.trailingStop.margin.price = Number(parseFloat($scope.trailingStop.margin.pips * $scope.trailingStop.Symbol.pips.value)).
+			toFixed($scope.trailingStop.Symbol.pips.digits)
+		$scope.trailingStop.margin.ratio = Number(($scope.trailingStop.margin.price / $scope.trailingStop.stop.last) * 100).toFixed(2)
+	}
+
+	$scope.refreshFromMarginPrice = (price) => {
+		if (price) {
+			$scope.trailingStop.margin.price = price
+		}
+		$scope.trailingStop.margin.pips = Math.round($scope.trailingStop.margin.price * Math.pow(10, $scope.trailingStop.Symbol.pips.digits))
+		$scope.trailingStop.margin.ratio = Number(($scope.trailingStop.margin.price / $scope.trailingStop.stop.last) * 100).toFixed(2)
+	}
+
+	$scope.refreshFromMarginRatio = (ratio) => {
+		if (ratio) {
+			$scope.trailingStop.margin.ratio = ratio
+		}
+		$scope.trailingStop.margin.price = Number($scope.trailingStop.stop.last * $scope.trailingStop.margin.ratio / 100).
+			toFixed($scope.trailingStop.Symbol.pips.digits)
+		$scope.trailingStop.margin.pips = Math.round($scope.trailingStop.margin.price * Math.pow(10, $scope.trailingStop.Symbol.pips.digits))
+	}
+
+	$scope.update = () => {
+		$http.put('/api/trailingstops/' + id, $scope.trailingStop).then((res) => {
+			$location.path('/trailing-stops').search({})
+		}, (e) => {
+			alert(e.data.error)
+			console.error('Error', e)
+		})
+	}
+
+	$scope.cancel = () => {
+		$location.path('/trailing-stops').search({})
+	}
+
+})
+
 controllerModule.controller('newTrailingStopsController', function ($scope, $http, $location, $interval) {
 	$scope.configuration = {
 		start: {
@@ -106,6 +172,9 @@ controllerModule.controller('newTrailingStopsController', function ($scope, $htt
 			price: null,
 		},
 		quantity: 0,
+		sell: {
+			market:true,
+		},
 		margin: {
 			pips: null,
 			price: null,
@@ -234,10 +303,28 @@ directiveModule.directive('trailingStopsDirective', function () {
 			distance: '=',
 			hideAssets: '=',
 		},
-		controller: function ($scope, $http) {
+		controller: function ($scope, $http, $location) {
 
+			$scope.gainOffStopRatio = (trailingStop) => {
+				if ( !trailingStop ){
+					return null;
+				}
+				return Number(((trailingStop.stop.last / trailingStop.stop.first) - 1).toFixed(4))
+			}
+			$scope.gainToStopRatio = (trailingStop) => {
+				if ( !trailingStop || (trailingStop && !trailingStop.buy.price) ){
+					return null;
+				}
+				return Number(((trailingStop.stop.last / trailingStop.buy.price) - 1).toFixed(4))
+			}
+			$scope.gainToCurrentRatio = (trailingStop) => {
+				if ( !trailingStop || (trailingStop && !trailingStop.buy.price) ){
+					return null;
+				}
+				return Number(((trailingStop.price / trailingStop.buy.price) - 1).toFixed(4))
+			}
 			$scope.shouldShowStatusMessage = (trailingStop) => {
-				return trailingStop.status.value === 1 || trailingStop.status.value === 3 || trailingStop.status.value === 4
+				return trailingStop ? trailingStop.status.value === 1 || trailingStop.status.value === 3 || trailingStop.status.value === 4 : false
 			}
 
 			$scope.stop = (trailingStop) => {
@@ -250,6 +337,10 @@ directiveModule.directive('trailingStopsDirective', function () {
 						console.error('Error', e)
 					})
 				}
+			}
+
+			$scope.edit = (trailingStop) => {
+				$location.path('/trailing-stop').search({id: trailingStop.id})
 			}
 		},
 	}
@@ -315,6 +406,9 @@ app.config(function ($routeProvider) {
 	}).when('/settings', {
 		controller: 'settingsController',
 		templateUrl: '/app/templates/settings.html',
+	}).when('/trailing-stop', {
+		controller: 'editTrailingStopsController',
+		templateUrl: '/app/templates/trailing-stop.html',
 	}).otherwise({
 		templateUrl: '/app/templates/dashboard.html',
 	})

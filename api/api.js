@@ -3,7 +3,7 @@ const path = require('path')
 const fs = require('fs')
 
 const {TrailingStopsModel} = require('./models/TrailingStopsModel')
-const {TrailingStopModel} = require('./models/TrailingStopModel')
+const {TrailingStopModel, Status} = require('./models/TrailingStopModel')
 const {SymbolsModel} = require('./models/SymbolsModel')
 
 const express = require('express')
@@ -169,6 +169,51 @@ app.get('/api/trailingstops', (req, res) => {
 	res.send(trailingStops.toJson())
 })
 
+app.get('/api/trailingstops/:id', (req, res) => {
+	const id = req.params.id
+
+	const trailingStop = trailingStops.findById(id)
+	if (!trailingStop) {
+		return res.status(404).send({
+			error: 'Trailing stop not found',
+		})
+	}
+
+	res.send(trailingStop.toJson())
+})
+
+app.put('/api/trailingstops/:id', (req, res) => {
+	const id = req.params.id
+
+	let trailingStop = trailingStops.findById(id)
+	if (!trailingStop) {
+		return res.status(404).send({
+			error: 'Trailing stop not found',
+		})
+	}
+
+	if (trailingStop.status === Status.Finished) {
+		return res.status(404).send({
+			error: 'Cannot edit a finished trailing stop',
+		})
+	}
+	if (trailingStop.status === Status.Cancelled) {
+		return res.status(404).send({
+			error: 'Cannot edit a cancelled trailing stop',
+		})
+	}
+
+	const trailingStopRequest = _.omit(req.body, ['price'])
+
+	console.log(trailingStopRequest)
+
+//	trailingStop = trailingStopRequest//_.assign(new TrailingStopModel(trailingStop.Symbol, trailingStopRequest), trailingStop)
+	trailingStops.update(new TrailingStopModel(trailingStop.Symbol, trailingStopRequest))
+
+	let updatedTrailingStop = trailingStops.findById(id)
+	res.send(updatedTrailingStop.toJson())
+})
+
 app.delete('/api/trailingstops/:id', (req, res) => {
 	const id = req.params.id
 	console.log('Closing Trailing Stop :', id)
@@ -270,35 +315,47 @@ const addTrailingStop = (trailingStopRequest, res) => {
 					'(' + Symbol.roundForSymbol(increasingPriceDelta).toFixed(Symbol.pips.digits) + ') ===')
 			} else {
 				if (currentTrailingStop.shouldSell()) {
-					currentTrailingStop.sell()
-					console.log('=== SELL @', trade.price, '(stop increased by +', Symbol.pipsFromPrice(currentTrailingStop.stop.delta), 'pips !)')
-					trailingStops.remove(currentTrailingStop.id)
-					if (canTrade && currentTrailingStop.quantity > 0) {
-						// Sell at market price for quantity
-						client.order({
-							useServerTime: true,
-							symbol: Symbol.name,
-							side: 'SELL',
-							type: 'MARKET',
-							quantity: currentTrailingStop.quantity,
-						}).then((res) => {
-							console.log('=== SELLING Status', res)
-							/**
-							 * { symbol: 'ONTETH',
-  							orderId: 4372922,
-  							clientOrderId: '***',
-  							transactTime: 1522995889560,
-  							price: '0.00000000',
-  							origQty: '5.00000000',
-  							executedQty: '5.00000000',
-  							status: 'FILLED',
-  							timeInForce: 'GTC',
-  							type: 'MARKET',
-  							side: 'SELL' }
-							 */
-						}).catch((e) => {
-							console.error('An error occured when selling', e)
-						})
+					currentTrailingStop = trailingStops.sold(currentTrailingStop.id)
+					if (canTrade && currentTrailingStop && currentTrailingStop.quantity > 0) {
+						if (currentTrailingStop.sell.market) {
+							console.log('=== SELL [MARKET] @', trade.price, '(stop increased by +', Symbol.pipsFromPrice(currentTrailingStop.stop.delta),
+								'pips !)')
+							// Sell at MARKET price for quantity
+							client.order({
+								useServerTime: true,
+								symbol: Symbol.name,
+								side: 'SELL',
+								type: 'MARKET',
+								quantity: currentTrailingStop.quantity,
+							}).then((res) => {
+								console.log('=== SELLING Status', res)
+								currentTrailingStop.sell.status.push(res)
+							}).catch((e) => {
+								console.log('=== SELLING ERROR', e)
+								currentTrailingStop.sell.status.push(e)
+							})
+						} else {
+							console.log('=== SELL [LIMIT] @', currentTrailingStop.stop.last, '(stop increased by +',
+								Symbol.pipsFromPrice(currentTrailingStop.stop.delta), 'pips !)')
+							// Sell at LIMIT price for quantity
+							client.order({
+								useServerTime: true,
+								symbol: Symbol.name,
+								side: 'SELL',
+								type: 'LIMIT',
+								price: currentTrailingStop.stop.last,
+								quantity: currentTrailingStop.quantity,
+							}).then((res) => {
+								console.log('=== SELLING Status', res)
+								currentTrailingStop.sell.status.push(res)
+							}).catch((e) => {
+								console.log('=== SELLING ERROR', e)
+								currentTrailingStop.sell.status.push(e)
+							})
+						}
+					} else {
+						console.log('=== SHOULD HAVE SOLD @', currentTrailingStop.stop.last, '(stop increased by +',
+							Symbol.pipsFromPrice(currentTrailingStop.stop.delta), 'pips !)')
 					}
 				}
 			}
